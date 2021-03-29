@@ -1,64 +1,59 @@
-from flask import Flask, request
-from flask_restful import Resource, Api, reqparse
-from flask_jwt import JWT, jwt_required, current_identity
-
-from security import authenticate, identity
+from flask import Flask, request, render_template
+import json
+import requests
+from user import User
+import cgi
+import sys
+import io
 
 app = Flask(__name__)
-app.config['PROPAGATE_EXCEPTIONS'] = True # To allow flask propagating exception even if debug is set to false on app
-app.secret_key = 'jose'
-api = Api(app)
 
-jwt = JWT(app, authenticate, identity)
+r = requests.get("https://api.sheety.co/f08e3b1b55ba18dc000f0d6abbe26a78/test/userdata")
+s = r.json()["userdata"]  # シート名
 
-items = []
+users = []
+for i in range(len(s)):
+    useri = User(s[i]["id"],
+                 s[i]["username"],
+                 s[i]["email"],
+                 s[i]["password"])
+    users.append(useri)
 
-class Item(Resource):
-    parser = reqparse.RequestParser()
-    parser.add_argument('price',
-        type=float,
-        required=True,
-        help="This field cannot be left blank!"
-    )
+username_table = {u.username: u for u in users}
+userid_table = {u.id: u for u in users}
 
-    @jwt_required()
-    def get(self, name):
-        return {'item': next(filter(lambda x: x['name'] == name, items), None)}
-
-    def post(self, name):
-        if next(filter(lambda x: x['name'] == name, items), None) is not None:
-            return {'message': "An item with name '{}' already exists.".format(name)}
-
-        data = Item.parser.parse_args()
-
-        item = {'name': name, 'price': data['price']}
-        items.append(item)
-        return item
-
-    @jwt_required()
-    def delete(self, name):
-        global items
-        items = list(filter(lambda x: x['name'] != name, items))
-        return {'message': 'Item deleted'}
-
-    @jwt_required()
-    def put(self, name):
-        data = Item.parser.parse_args()
-        # Once again, print something not in the args to verify everything works
-        item = next(filter(lambda x: x['name'] == name, items), None)
-        if item is None:
-            item = {'name': name, 'price': data['price']}
-            items.append(item)
-        else:
-            item.update(data)
-        return item
-
-class ItemList(Resource):
-    def get(self):
-        return {'items': items}
-
-api.add_resource(Item, '/item/<string:name>')
-api.add_resource(ItemList, '/items')
+@app.route('/', methods=["POST", "GET"])
+def index():
+    if request.method=="GET":
+        return render_template("login.html")
+    else:
+        form_username = request.form['username']
+        form_password = request.form['password']
+        form_user = username_table.get(form_username, None)
+        if form_user and form_user.password == form_password:
+            return "Success"
 
 if __name__ == '__main__':
-    app.run(debug=True)  # important to mention debug=True
+    app.run(debug=True)
+
+
+#r = requests.get("https://api.sheety.co/f08e3b1b55ba18dc000f0d6abbe26a78/test/userdata")
+#s = r.json()["userdata"]  # シート名
+
+#users = []
+#for i in range(len(s)):
+#    useri = User(s[i]["id"],
+#                 s[i]["username"],
+#                 s[i]["email"],
+#                 s[i]["password"])
+#    users.append(useri)
+
+#username_table = {u.username: u for u in users}
+#userid_table = {u.id: u for u in users}
+
+
+#@app.route('/login', methods=['GET'])
+#def login(username, password):
+#    user = username_table.get(username, None)
+#    if user and user.password == password:
+#        return user
