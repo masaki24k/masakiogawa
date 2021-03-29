@@ -1,9 +1,18 @@
+# signup.html
 <html>
-<head></head>
+<head>
+    <meta http-equiv="content-type" content="application/json; charset=UTF-8">
+</head>
 <body>
     <form action="" method="post">
         <div>
+            id <input type="number" name="id">
+        </div>
+        <div>
             username <input type="text" name="username">
+        </div>
+        <div>
+            email <input type="text" name="email">
         </div>
         <div>
             password <input type="password" name="password">
@@ -12,10 +21,5 @@
             <input type="submit">
         </div>
     </form>
-
-    <p>
-        ようこそ　{{ form_user }}
-    </p>
-
 </body>
 </html>
